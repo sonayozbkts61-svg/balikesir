@@ -102,6 +102,19 @@
   }
   .result.show{ display:block; }
   .result b{ color:var(--text); }
+  a#mapLink{
+    display:block;
+    text-align:center;
+    margin-top:12px;
+    padding:15px;
+    background:var(--accent);
+    color:#fff;
+    text-decoration:none;
+    border-radius:8px;
+    font-size:16px;
+    font-weight:600;
+  }
+  a#mapLink:active{ background:var(--accent-dark); }
 </style>
 </head>
 <body>
@@ -109,8 +122,8 @@
 <h1>Balıkesir Adres Bul</h1>
 
 <div class="field">
-  <select id="ilce">
-    <option value="">İlçe Seçiniz</option>
+  <select id="ilce" disabled>
+    <option value="">Yükleniyor…</option>
   </select>
 </div>
 
@@ -137,16 +150,31 @@
 <div class="hint">Kapı numarası seçmezseniz o sokaktaki en küçük kapı numarasının konumu açılır.</div>
 
 <div class="result" id="result"></div>
+<a id="mapLink" style="display:none" href="#">📍 Haritada Aç</a>
 
 <script>
 /* ============================================================
    VERİ (DATA)
-   Bu dizideki her satır e-tablonuzdaki bir satıra karşılık gelir.
+   Veri artık ayrı bir data.json dosyasından yükleniyor.
+   Belediyeden tam veri (4000 satır) gelince sadece data.json
+   dosyasını değiştirmeniz yeterli -- bu index.html dosyasına
+   dokunmanıza gerek kalmaz.
    Sütunlar: Ilce, Mahalle, SokakAdi, KapiNo, ApartmanAdi, Enlem, Boylam, EnKucukKapiNo
-   E-tablonuz güncellendikçe bu diziyi yenisiyle değiştirmeniz yeterli
-   (Enlem/Boylam boş olan satırlar otomatik atlanır).
    ============================================================ */
-const DATA = [{"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2. Ersüren Sokak", "KapiNo": "10", "ApartmanAdi": "Acar Apt", "Enlem": 39.64454, "Boylam": 27.90306, "EnKucukKapiNo": "10"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2. Ersüren Sokak", "KapiNo": "12", "ApartmanAdi": "", "Enlem": 39.64453, "Boylam": 27.90326, "EnKucukKapiNo": "10"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "1", "ApartmanAdi": "A", "Enlem": 39.64576, "Boylam": 27.90038, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "2", "ApartmanAdi": "A (Hacı Hasan Camii)", "Enlem": 39.64587, "Boylam": 27.90049, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "2", "ApartmanAdi": "B (Hacı Hasan Camii)", "Enlem": 39.64587, "Boylam": 27.90049, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "2", "ApartmanAdi": "C (Hacı Hasan Camii)", "Enlem": 39.64587, "Boylam": 27.90049, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "2", "ApartmanAdi": "D (Hacı Hasan Camii)", "Enlem": 39.64587, "Boylam": 27.90049, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "3", "ApartmanAdi": "", "Enlem": 39.64583, "Boylam": 27.90041, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "4", "ApartmanAdi": "", "Enlem": 39.64615, "Boylam": 27.90062, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "4", "ApartmanAdi": "A", "Enlem": 39.64615, "Boylam": 27.90062, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "5", "ApartmanAdi": "", "Enlem": 39.64591, "Boylam": 27.90045, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "6", "ApartmanAdi": "A", "Enlem": 39.64627, "Boylam": 27.90067, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "7", "ApartmanAdi": "(Duran Apt)", "Enlem": 39.64599, "Boylam": 27.90048, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "8", "ApartmanAdi": "", "Enlem": 39.64642, "Boylam": 27.90075, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2000 Sokak", "KapiNo": "8", "ApartmanAdi": "A", "Enlem": 39.64642, "Boylam": 27.90075, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2001 Sokak", "KapiNo": "1", "ApartmanAdi": "", "Enlem": 39.64625, "Boylam": 27.90111, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2001 Sokak", "KapiNo": "1", "ApartmanAdi": "A", "Enlem": 39.64625, "Boylam": 27.90111, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2001 Sokak", "KapiNo": "3", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90142, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "1. Gündoğan", "SokakAdi": "2001 Sokak", "KapiNo": "3", "ApartmanAdi": "A", "Enlem": 39.64616, "Boylam": 27.90142, "EnKucukKapiNo": "1"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "8001 Sokak", "KapiNo": "2", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90067, "EnKucukKapiNo": "2"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "8001 Sokak", "KapiNo": "3", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90067, "EnKucukKapiNo": "2"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "8001 Sokak", "KapiNo": "6", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90067, "EnKucukKapiNo": "2"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "8001 Sokak", "KapiNo": "8", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90067, "EnKucukKapiNo": "2"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "8001 Sokak", "KapiNo": "9", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90067, "EnKucukKapiNo": "2"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "8001 Sokak", "KapiNo": "12", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90067, "EnKucukKapiNo": "2"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "8001 Sokak", "KapiNo": "16", "ApartmanAdi": "", "Enlem": 39.64616, "Boylam": 27.90067, "EnKucukKapiNo": "2"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "Azerbaycan Caddesi", "KapiNo": "3", "ApartmanAdi": "", "Enlem": 39.64615, "Boylam": 27.90049, "EnKucukKapiNo": "3"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "Azerbaycan Caddesi", "KapiNo": "4", "ApartmanAdi": "", "Enlem": 39.64615, "Boylam": 27.90049, "EnKucukKapiNo": "3"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "Azerbaycan Caddesi", "KapiNo": "5", "ApartmanAdi": "", "Enlem": 39.64615, "Boylam": 27.90049, "EnKucukKapiNo": "3"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "Azerbaycan Caddesi", "KapiNo": "6", "ApartmanAdi": "", "Enlem": 39.64615, "Boylam": 27.90049, "EnKucukKapiNo": "3"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "Azerbaycan Caddesi", "KapiNo": "7", "ApartmanAdi": "", "Enlem": 39.64615, "Boylam": 27.90049, "EnKucukKapiNo": "3"}, {"Ilce": "Altıeylül", "Mahalle": "Gümüşçeşme", "SokakAdi": "Azerbaycan Caddesi", "KapiNo": "87", "ApartmanAdi": "", "Enlem": 39.64615, "Boylam": 27.90049, "EnKucukKapiNo": "3"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "22", "ApartmanAdi": "3 (Sezer Sitesi H Blok)", "Enlem": 39.6656, "Boylam": 27.90735, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "22", "ApartmanAdi": "4 (Sezer Sitesi I Blok)", "Enlem": 39.6657, "Boylam": 27.90736, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "3", "ApartmanAdi": "", "Enlem": 39.6658, "Boylam": 27.90737, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "2", "ApartmanAdi": "A", "Enlem": 39.6659, "Boylam": 27.90738, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "7", "ApartmanAdi": "", "Enlem": 39.666, "Boylam": 27.90739, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "9", "ApartmanAdi": "2", "Enlem": 39.6661, "Boylam": 27.9074, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "6", "ApartmanAdi": "", "Enlem": 39.6662, "Boylam": 27.90741, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "3", "ApartmanAdi": "", "Enlem": 39.6663, "Boylam": 27.90742, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Sabri Uğur Caddesi", "KapiNo": "5", "ApartmanAdi": "", "Enlem": 39.6664, "Boylam": 27.90743, "EnKucukKapiNo": "2"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "6", "ApartmanAdi": "", "Enlem": 39.6665, "Boylam": 27.90744, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "7", "ApartmanAdi": "", "Enlem": 39.6666, "Boylam": 27.90745, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "7", "ApartmanAdi": "A", "Enlem": 39.6667, "Boylam": 27.90746, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "9", "ApartmanAdi": "", "Enlem": 39.6668, "Boylam": 27.90747, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "10", "ApartmanAdi": "", "Enlem": 39.6669, "Boylam": 27.90748, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "11", "ApartmanAdi": "3", "Enlem": 39.667, "Boylam": 27.90749, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "12", "ApartmanAdi": "", "Enlem": 39.6671, "Boylam": 27.9075, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Paşaalanı", "SokakAdi": "Serkan Caddesi", "KapiNo": "12", "ApartmanAdi": "", "Enlem": 39.6672, "Boylam": 27.90751, "EnKucukKapiNo": "6"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "1", "ApartmanAdi": "1", "Enlem": 39.6673, "Boylam": 27.90752, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "2", "ApartmanAdi": "", "Enlem": 39.6674, "Boylam": 27.90753, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "3", "ApartmanAdi": "", "Enlem": 39.6675, "Boylam": 27.90754, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "4", "ApartmanAdi": "", "Enlem": 39.6676, "Boylam": 27.90755, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "5", "ApartmanAdi": "D", "Enlem": 39.6677, "Boylam": 27.90756, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "6", "ApartmanAdi": "", "Enlem": 39.6678, "Boylam": 27.90757, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "7", "ApartmanAdi": "", "Enlem": 39.6679, "Boylam": 27.90758, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Okul Caddesi", "KapiNo": "8", "ApartmanAdi": "", "Enlem": 39.668, "Boylam": 27.90759, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Üç Pınar Yolu", "KapiNo": "5", "ApartmanAdi": "1", "Enlem": 39.6681, "Boylam": 27.9076, "EnKucukKapiNo": "5"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Üç Pınar Yolu", "KapiNo": "5", "ApartmanAdi": "2", "Enlem": 39.6682, "Boylam": 27.90761, "EnKucukKapiNo": "5"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Üç Pınar Yolu", "KapiNo": "5", "ApartmanAdi": "3", "Enlem": 39.6683, "Boylam": 27.90762, "EnKucukKapiNo": "5"}, {"Ilce": "Karesi", "Mahalle": "Toygar", "SokakAdi": "Üç Pınar Yolu", "KapiNo": "8", "ApartmanAdi": "", "Enlem": 39.6684, "Boylam": 27.90763, "EnKucukKapiNo": "5"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Hastane Caddesi", "KapiNo": "4", "ApartmanAdi": "", "Enlem": 39.6685, "Boylam": 27.90764, "EnKucukKapiNo": "4"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Hastane Caddesi", "KapiNo": "4", "ApartmanAdi": "", "Enlem": 39.6686, "Boylam": 27.90765, "EnKucukKapiNo": "4"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Hastane Caddesi", "KapiNo": "5", "ApartmanAdi": "", "Enlem": 39.6687, "Boylam": 27.90766, "EnKucukKapiNo": "4"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Hastane Caddesi", "KapiNo": "6", "ApartmanAdi": "", "Enlem": 39.6688, "Boylam": 27.90767, "EnKucukKapiNo": "4"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Hastane Caddesi", "KapiNo": "7", "ApartmanAdi": "", "Enlem": 39.6689, "Boylam": 27.90768, "EnKucukKapiNo": "4"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Demirciler Caddesi", "KapiNo": "1", "ApartmanAdi": "", "Enlem": 39.669, "Boylam": 27.90769, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Demirciler Caddesi", "KapiNo": "2", "ApartmanAdi": "", "Enlem": 39.6691, "Boylam": 27.9077, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Demirciler Caddesi", "KapiNo": "3", "ApartmanAdi": "3", "Enlem": 39.6692, "Boylam": 27.90771, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Demirciler Caddesi", "KapiNo": "4", "ApartmanAdi": "", "Enlem": 39.6693, "Boylam": 27.90772, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Demirciler Caddesi", "KapiNo": "5", "ApartmanAdi": "2", "Enlem": 39.6694, "Boylam": 27.90773, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Demirciler Caddesi", "KapiNo": "6", "ApartmanAdi": "", "Enlem": 39.6695, "Boylam": 27.90774, "EnKucukKapiNo": "1"}, {"Ilce": "Karesi", "Mahalle": "Atatürk", "SokakAdi": "Demirciler Caddesi", "KapiNo": "7", "ApartmanAdi": "", "Enlem": 39.6696, "Boylam": 27.90775, "EnKucukKapiNo": "1"}];
+let DATA = [];
+
+async function loadData(){
+  try{
+    const res = await fetch("data.json");
+    DATA = await res.json();
+    fillSelect(ilceSel, uniq(DATA.map(d=>d.Ilce)), "İlçe Seçiniz");
+    ilceSel.disabled = false;
+  } catch(err){
+    ilceSel.innerHTML = `<option value="">Veri yüklenemedi (data.json bulunamadı)</option>`;
+    console.error("Veri yükleme hatası:", err);
+  }
+}
+
 
 const ilceSel = document.getElementById('ilce');
 const mahalleSel = document.getElementById('mahalle');
@@ -193,10 +221,8 @@ function resetFrom(level){
   if(level<=3){ kapinoSel.disabled=true; fillSelect(kapinoSel,[], "Kapı No Seçiniz (opsiyonel)"); }
   sorgulaBtn.disabled = true;
   resultBox.classList.remove('show');
+  mapLink.style.display = 'none';
 }
-
-// İlçeler sabit: Altıeylül, Karesi (veride hangileri varsa otomatik listelenir)
-fillSelect(ilceSel, uniq(DATA.map(d=>d.Ilce)), "İlçe Seçiniz");
 
 ilceSel.addEventListener('change', ()=>{
   resetFrom(1);
@@ -234,22 +260,16 @@ function isiOS(){
          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-function openMap(lat, lng, label){
+const mapLink = document.getElementById('mapLink');
+
+function buildMapUrl(lat, lng, label){
   const encodedLabel = encodeURIComponent(label || '');
   if(isiOS()){
-    // Apple Haritalar
-    window.location.href = `https://maps.apple.com/?ll=${lat},${lng}&q=${encodedLabel}`;
-  } else {
-    // Android: geo: şeması varsayılan harita uygulamasını açtırır
-    const geoUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodedLabel})`;
-    const fallback = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-    // geo: desteklenmezse tarayıcı otomatik olarak yakalamaz, bu yüzden
-    // kısa bir süre sonra web fallback'e düşürüyoruz
-    let didHide = false;
-    window.addEventListener('blur', ()=>{ didHide = true; }, {once:true});
-    window.location.href = geoUrl;
-    setTimeout(()=>{ if(!didHide) window.location.href = fallback; }, 700);
+    return `https://maps.apple.com/?ll=${lat},${lng}&q=${encodedLabel}`;
   }
+  // Android/diğer: geo: şeması, gerçek bir tıklamada varsayılan harita
+  // uygulaması seçicisini (Google Maps, Yandex, vb.) tetikler
+  return `geo:${lat},${lng}?q=${lat},${lng}(${encodedLabel})`;
 }
 
 sorgulaBtn.addEventListener('click', ()=>{
@@ -270,8 +290,12 @@ sorgulaBtn.addEventListener('click', ()=>{
   resultBox.innerHTML = `<b>${label}</b><br>${row.ApartmanAdi ? row.ApartmanAdi+'<br>' : ''}${row.Enlem}, ${row.Boylam}`;
   resultBox.classList.add('show');
 
-  openMap(row.Enlem, row.Boylam, label);
+  mapLink.href = buildMapUrl(row.Enlem, row.Boylam, label);
+  mapLink.style.display = 'block';
 });
+
+// İlçeler sabit: Altıeylül, Karesi (veride hangileri varsa otomatik listelenir)
+loadData();
 </script>
 </body>
 </html>
